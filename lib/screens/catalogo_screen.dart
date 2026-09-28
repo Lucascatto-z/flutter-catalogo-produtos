@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/produto.dart';
 import '../widgets/produto_card.dart';
+import 'detalhes_produto_screen.dart'; 
 
 class CatalogoScreen extends StatefulWidget {
   const CatalogoScreen({super.key});
@@ -17,6 +18,21 @@ class _CatalogoScreenState extends State<CatalogoScreen> {
     const Produto(id: '4', nome: 'Smartwatch Garmin', preco: 2300.00, categoria: 'Wearables', icone: '⌚'),
     const Produto(id: '5', nome: 'Teclado Mecânico RGB', preco: 450.00, categoria: 'Periféricos', icone: '⌨️'),
   ];
+
+  void _adicionarProduto() {
+    setState(() {
+      final novoId = DateTime.now().millisecondsSinceEpoch.toString();
+      _produtos.add(
+        Produto(
+          id: novoId,
+          nome: 'Novo Produto ${_produtos.length + 1}',
+          preco: 199.90 + (_produtos.length * 10),
+          categoria: 'Geral',
+          icone: '📦',
+        ),
+      );
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,22 +52,52 @@ class _CatalogoScreenState extends State<CatalogoScreen> {
           ),
         ],
       ),
-      body: ListView.builder(
-        itemCount: _produtos.length,
-        itemBuilder: (context, index) {
-          final produto = _produtos[index];
-          return ProdutoCard(
-            produto: produto,
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Item selecionado: ${produto.nome}'),
-                  duration: const Duration(seconds: 1),
-                ),
-              );
-            },
-          );
-        },
+      body: _produtos.isEmpty
+          ? const Center(child: Text('Nenhum produto cadastrado.'))
+          : ListView.builder(
+              itemCount: _produtos.length,
+              itemBuilder: (context, index) {
+                final produto = _produtos[index];
+                return Dismissible(
+                  key: Key(produto.id),
+                  direction: DismissDirection.endToStart,
+                  background: Container(
+                    color: Colors.red,
+                    alignment: Alignment.centerRight,
+                    padding: const EdgeInsets.only(right: 20),
+                    child: const Icon(Icons.delete, color: Colors.white),
+                  ),
+                  onDismissed: (direction) {
+                    final produtoRemovido = produto;
+                    setState(() {
+                      _produtos.removeAt(index);
+                    });
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('${produtoRemovido.nome} removido'),
+                        duration: const Duration(seconds: 2),
+                      ),
+                    );
+                  },
+                  child: ProdutoCard(
+                    produto: produto,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => DetalhesProdutoScreen(produto: produto),
+                        ),
+                      );
+                    },
+                  ),
+                );
+              },
+            ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _adicionarProduto,
+        tooltip: 'Adicionar Produto',
+        child: const Icon(Icons.add),
       ),
     );
   }
